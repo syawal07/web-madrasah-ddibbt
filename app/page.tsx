@@ -1,65 +1,164 @@
-import Image from "next/image";
+import { client } from '@/lib/sanity.client'
+import groq from 'groq'
+import Link from 'next/link'
+import Image from 'next/image'
+import { ArrowRight } from 'lucide-react'
+import { Post } from '@/types/Post'
+import { SiteSettings, Statistic } from '@/types/Sanity'
 
-export default function Home() {
+import Jumbotron from '@/components/Jumbotron'
+import Statistics from '@/components/Statistics'
+import AboutSection from '@/components/AboutSection'
+import PostsSection from '@/components/PostsSection'
+
+export const revalidate = 60
+
+// Definisi Tipe Data Khusus untuk Gallery di Homepage
+type GalleryItemSimple = {
+  _id: string;
+  caption: string;
+  image: {
+    asset: {
+      url: string;
+    };
+  };
+}
+
+type HomepageData = {
+  siteSettings: SiteSettings | null;
+  latestNews: Post[];
+  latestAchievements: Post[];
+  statistics: Statistic[];
+  latestGallery: GalleryItemSimple[]; // Tambahan baru
+}
+
+async function getHomepageData(): Promise<HomepageData> {
+  const query = groq`
+    {
+      "siteSettings": *[_type == "siteSettings"][0] {
+        ...,
+        logo { asset->{url} },
+        jumbotronImage { asset->{url} },
+        aboutImage { asset->{url} }
+      },
+      "latestNews": *[_type == "post" && postType == "berita"] | order(publishedAt desc) [0...5] {
+        _id,
+        title,
+        slug,
+        publishedAt,
+        summary,
+        featuredImage { asset->{url} }
+      },
+      "latestAchievements": *[_type == "post" && postType == "prestasi"] | order(publishedAt desc) [0...5] {
+        _id,
+        title,
+        slug,
+        publishedAt,
+        summary,
+        featuredImage { asset->{url} }
+      },
+      "statistics": *[_type == "statistic"],
+      "latestGallery": *[_type == "galleryItem"] | order(_createdAt desc) [0...5] {
+        _id,
+        caption,
+        image { asset->{url} }
+      }
+    }
+  `
+  return client.fetch(query)
+}
+
+export default async function HomePage() {
+  const { siteSettings, latestNews, latestAchievements, statistics, latestGallery } =
+    await getHomepageData()
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main>
+      <Jumbotron settings={siteSettings} />
+
+      <Statistics stats={statistics || []} />
+
+      <AboutSection settings={siteSettings} />
+
+      {/* Bagian Berita */}
+      <section className="bg-gray-50">
+        <PostsSection
+          title="Berita Terbaru"
+          subtitle="Informasi terkini seputar kegiatan pondok pesantren"
+          posts={latestNews || []}
+          archiveUrl="/berita"
+          archiveText="Lihat Semua Berita"
+          basePath="/berita"
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+      </section>
+
+      {/* Bagian Prestasi */}
+      <section className="bg-white border-b border-gray-100">
+        <PostsSection
+          title="Prestasi Santri"
+          subtitle="Jejak langkah keberhasilan santri kami di berbagai bidang"
+          posts={latestAchievements || []}
+          archiveUrl="/achievements"
+          archiveText="Lihat Semua Prestasi"
+          basePath="/achievements"
+        />
+      </section>
+
+      {/* --- BAGIAN BARU: GALERI PONDOK --- */}
+      <section className="bg-gray-50 py-20 px-4">
+        <div className="container mx-auto">
+          {/* Header Galeri */}
+          <div className="text-center max-w-3xl mx-auto mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 font-heading">
+              Galeri Kegiatan
+            </h2>
+            <p className="text-gray-600 text-lg">
+              Potret aktivitas harian, sarana, dan momen kebersamaan di Pondok Pesantren.
+            </p>
+            <div className="w-24 h-1 bg-[#006400] mx-auto mt-6 rounded-full"></div>
+          </div>
+
+          {/* Grid Galeri */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+            {(latestGallery || []).map((item) => (
+              <div 
+                key={item._id} 
+                className="group relative aspect-square overflow-hidden rounded-xl bg-gray-200 shadow-md"
+              >
+                {item.image?.asset?.url ? (
+                  <Image
+                    src={item.image.asset.url}
+                    alt={item.caption || 'Galeri Pondok'}
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
+                )}
+                
+                {/* Overlay Caption saat Hover */}
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                  <p className="text-white font-medium text-sm md:text-base line-clamp-2">
+                    {item.caption}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Tombol Lihat Semua */}
+          <div className="text-center mt-12">
+            <Link 
+              href="/gallery" 
+              className="inline-flex items-center px-8 py-3 bg-white text-[#006400] border-2 border-[#006400] font-bold rounded-full hover:bg-[#006400] hover:text-white transition-all duration-300 shadow-md hover:shadow-lg"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              Lihat Semua Galeri
+              <ArrowRight className="ml-2 w-5 h-5" />
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+      </section>
+
+    </main>
+  )
 }
