@@ -8,7 +8,7 @@ import { Menu, X } from 'lucide-react'
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
 
-  // Fungsi untuk menutup menu saat link diklikk
+  // Fungsi untuk menutup menu saat link diklik
   const closeMenu = () => setIsOpen(false)
 
   return (
@@ -27,11 +27,16 @@ export default function Navbar() {
               />
             </div>
             <div className="flex flex-col">
-              {/* Teks Responsive: Di HP kecil, di Laptop besar */}
+              {/* Judul Utama */}
               <span className="font-bold text-sm md:text-xl leading-tight max-w-[200px] md:max-w-none">
                 Pondok Pesantren DDI
               </span>
-              <span className="text-[10px] md:text-sm text-green-100 hidden sm:block">
+              
+              {/* PERBAIKAN DISINI: 
+                  Saya menghapus 'hidden sm:block' dan menggantinya menjadi 'block'.
+                  Sekarang teks ini akan MUNCUL di HP, Tablet, dan Laptop. 
+              */}
+              <span className="text-[10px] md:text-sm text-green-100 block leading-tight">
                 Ashshirathal Mustaqim Baru-Baru Tanga
               </span>
             </div>
@@ -45,8 +50,8 @@ export default function Navbar() {
               { name: 'Guru', path: '/teachers' },
               { name: 'Berita', path: '/berita' },
               { name: 'Prestasi', path: '/achievements' },
-              { name: 'Galeri', path: '/gallery' }, // Uncomment jika sudah siap
-              { name: 'Kontak', path: '/contact' }, // Uncomment jika sudah siap
+              { name: 'Galeri', path: '/gallery' },
+              { name: 'Kontak', path: '/contact' },
             ].map((link) => (
               <Link
                 key={link.path}
