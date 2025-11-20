@@ -8,7 +8,7 @@ import { Menu, X } from 'lucide-react'
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
 
-  // Fungsi untuk menutup menu saat link diklik
+  // Fungsi untuk menutup menu saat link diklikk
   const closeMenu = () => setIsOpen(false)
 
   return (
