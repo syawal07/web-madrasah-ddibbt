@@ -1,3 +1,5 @@
+import { PortableTextBlock } from "next-sanity";
+
 export type SiteSettings = {
   _id: string;
   siteTitle: string;
@@ -8,12 +10,34 @@ export type SiteSettings = {
   jumbotronSubtitle?: string;
   jumbotronImage?: { asset: { url: string } };
   
-  // About
+  // About Home
   aboutTitle?: string;
   aboutSummary?: string;
   aboutImage?: { asset: { url: string } };
   
-  // Footer & Kontak
+  // --- IDENTITAS SEKOLAH (BARU) ---
+  schoolName?: string;
+  nsm?: string;
+  npsn?: string;
+  addressStreet?: string;
+  addressDistrict?: string;
+  addressRegency?: string;
+  addressProvince?: string;
+
+  // --- VISI MISI (BARU) ---
+  vision?: string;
+  mission?: PortableTextBlock[]; // Karena pakai Rich Text
+  visionImage?: { asset: { url: string } };
+
+  // --- SEJARAH (BARU) ---
+  historyText?: PortableTextBlock[];
+  historyImage?: { asset: { url: string } };
+
+  // --- STRUKTUR (BARU) ---
+  structureImage?: { asset: { url: string } };
+  structureText?: string;
+
+  // Footer & Contact
   footerText?: string;
   footerAddress?: string;
   footerPhone?: string;
